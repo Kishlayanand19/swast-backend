@@ -6,37 +6,46 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const userMsg = req.body.message;
 
-    if (!process.env.GEMINI_API_KEY) {
+    const API_KEY = process.env.GEMINI_API_KEY;
+
+    if (!API_KEY) {
       return res.status(500).json({ error: "Gemini API key missing" });
     }
 
-    const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
-      process.env.GEMINI_API_KEY;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: message }],
-          },
-        ],
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: userMsg }],
+            },
+          ],
+        }),
+      }
+    );
 
     const data = await response.json();
 
     const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I couldn't reply.";
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Sorry, I couldn't understand.";
 
-    res.status(200).json({ reply });
+    res.json({
+      choices: [
+        {
+          message: {
+            content: reply,
+          },
+        },
+      ],
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
