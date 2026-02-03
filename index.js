@@ -17,25 +17,26 @@ export default async function handler(req, res) {
       {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           contents: [
             {
-              parts: [{ text: userMsg }],
-            },
-          ],
-        }),
+              parts: [{ text: userMsg }]
+            }
+          ]
+        })
       }
     );
 
     const data = await response.json();
 
     const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       "No response from AI";
 
     res.status(200).json({ reply });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
