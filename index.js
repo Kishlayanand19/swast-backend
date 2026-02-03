@@ -9,23 +9,24 @@ export default async function handler(req, res) {
   try {
     const userMsg = req.body.message;
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "API key missing" });
+    const API_KEY = process.env.GEMINI_API_KEY;
+
+    if (!API_KEY) {
+      return res.status(500).json({ error: "Gemini API key missing" });
     }
 
     const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: "You are Swastha AI, a helpful nutrition assistant." },
-            { role: "user", content: userMsg }
+          contents: [
+            {
+              parts: [{ text: userMsg }]
+            }
           ]
         })
       }
@@ -33,11 +34,20 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    return res.status(200).json(data);
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response from AI";
+
+    return res.status(200).json({
+      choices: [
+        {
+          message: { content: reply }
+        }
+      ]
+    });
 
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Server error" });
   }
 }
-
