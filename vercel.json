@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "index.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/chat",
+      "dest": "/index.js"
+    }
+  ]
+}
