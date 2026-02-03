@@ -1,15 +1,17 @@
-import express from "express";
 import fetch from "node-fetch";
-import cors from "cors";
 
-const app = express();
+export default async function handler(req, res) {
 
-app.use(cors());
-app.use(express.json());
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-app.post("/chat", async (req, res) => {
   try {
     const userMsg = req.body.message;
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: "API key missing" });
+    }
 
     const response = await fetch(
       "https://api.openai.com/v1/chat/completions",
@@ -22,7 +24,7 @@ app.post("/chat", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            { role: "system", content: "You are Swastha AI" },
+            { role: "system", content: "You are Swastha AI, a helpful nutrition assistant." },
             { role: "user", content: userMsg }
           ]
         })
@@ -30,11 +32,12 @@ app.post("/chat", async (req, res) => {
     );
 
     const data = await response.json();
-    res.json(data);
+
+    return res.status(200).json(data);
 
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
-});
+}
 
-export default app;
