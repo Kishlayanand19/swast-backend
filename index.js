@@ -8,14 +8,12 @@ export default async function handler(req, res) {
   try {
     const userMsg = req.body.message;
 
-    const API_KEY = process.env.GEMINI_API_KEY;
-
-    if (!API_KEY) {
-      return res.status(500).json({ error: "Gemini API key missing" });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: "API key missing" });
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -35,17 +33,9 @@ export default async function handler(req, res) {
 
     const reply =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I couldn't understand.";
+      "No response from AI";
 
-    res.json({
-      choices: [
-        {
-          message: {
-            content: reply,
-          },
-        },
-      ],
-    });
+    res.status(200).json({ reply });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
