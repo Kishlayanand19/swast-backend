@@ -7,6 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Swastha Backend is Running 🚀");
+});
+
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
