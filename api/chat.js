@@ -2,7 +2,6 @@
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const SYSTEM_PROMPT = `You are Swastha, an AI-powered Nutrition and Website Guidance Chatbot for the Swastha nutrition and wellness platform.
@@ -35,16 +34,22 @@ Safety Rules:
 ✅ Focus on general nutrition education and wellness`;
 
 module.exports = async (req, res) => {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // IMPORTANT: Set CORS headers FIRST before anything else
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Allow all origins
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-  // Handle preflight request
+  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
+  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -52,14 +57,17 @@ module.exports = async (req, res) => {
   try {
     const { message, conversationHistory = [] } = req.body;
 
+    // Validate message
     if (!message || message.trim().length === 0) {
-      return res.status(400).json({ error: 'Message is required' });
+      return res.status(400).json({ 
+        error: 'Message is required',
+        success: false 
+      });
     }
 
     // Build conversation context
     let conversationContext = SYSTEM_PROMPT + "\n\nConversation:\n";
     
-    // Add history
     conversationHistory.forEach(msg => {
       if (msg.role === 'user') {
         conversationContext += `User: ${msg.content}\n`;
@@ -86,6 +94,7 @@ module.exports = async (req, res) => {
     const response = await result.response;
     const reply = response.text();
 
+    // Return success response
     return res.status(200).json({
       reply: reply.trim(),
       success: true
@@ -95,7 +104,8 @@ module.exports = async (req, res) => {
     console.error('Chatbot API Error:', error);
     return res.status(500).json({
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
+      success: false
     });
   }
 };
